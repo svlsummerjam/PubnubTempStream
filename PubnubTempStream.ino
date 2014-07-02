@@ -9,10 +9,7 @@
 #include <string>
 #include <sstream>
 #include <Time.h>
-#include <time.h> 
-#define TIME_MSG_LEN  11 
-#define TIME_HEADER  'T'
-#define TIME_REQUEST  7
+
 
 int temperaturePin = 0;
 int photoPin = 1;
@@ -53,41 +50,10 @@ void setup()
     
 }
 
-void reverse(char *str, int len)
-{
-    int i=0, j=len-1, temp;
-    while (i<j)
-    {
-        temp = str[i];
-        str[i] = str[j];
-        str[j] = temp;
-        i++; j--;
-    }
-}
-
-int intToStr(int x, char str[], int d)
-{
-    int i = 0;
-    while (x)
-    {
-        str[i++] = (x%10) + '0';
-        x = x/10;
-    }
- 
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while (i < d)
-        str[i++] = '0';
- 
-    reverse(str, i);
-    str[i] = '\0';
-    return i;
-}
-
-
 float getVoltage(int pin){
   return (analogRead(pin) * .004882814);
 }
+
 
 int getPhoto(int pin) {
   return analogRead(pin);
@@ -107,7 +73,7 @@ float getTemp(int pin)
 
 char *getTime() 
 {
-    
+  
   char timeString[200];
   time_t t = now();
   long myTime = (long)t;
@@ -116,47 +82,6 @@ char *getTime()
   return timeString;
 }
 
-char *ultostr(long value, char *ptr, int base)
-{
-  long t = 0, res = 0;
-  long tmp = value;
-  int count = 0;
-
-  if (NULL == ptr)
-  {
-    return NULL;
-  }
-
-  if (tmp == 0)
-  {
-    count++;
-  }
-
-  while(tmp > 0)
-  {
-    tmp = tmp/base;
-    count++;
-  }
-
-  ptr += count;
-
-  *ptr = '\0';
-
-  do
-  {
-    res = value - base * (t = value / base);
-    if (res < 10)
-    {
-      * -- ptr = '0' + res;
-    }
-    else if ((res >= 10) && (res < 16))
-    {
-        * --ptr = 'A' - 10 + res;
-    }
-  } while ((value = t) != 0);
-
-  return(ptr);
-}
 
 aJsonObject *createMessage()
 {
@@ -250,73 +175,6 @@ void dumpMessage(Stream &s, aJsonObject *msg)
 }
 
 
-
-void ftoa(float n, char *res, int afterpoint)
-{
-    // Extract integer part
-    float ipart = (float)n;
- 
-    // Extract floating part
-    int fpart = n - (int)ipart;
- 
-    // convert integer part to string
-    int i = intToStr(ipart, res, 0);
- 
-    // check for display option after point
-    if (afterpoint != 0)
-    {
-        res[i] = '.';  // add dot
- 
-        // Get the value of fraction part upto given no.
-        // of points after dot. The third parameter is needed
-        // to handle cases like 233.007
-        fpart = fpart * pow(10, afterpoint);
- 
-        intToStr((int)fpart, res + i + 1, afterpoint);
-    }
-}
-
-void digitalClockDisplay(){
-  // digital clock display of the time
-  Serial.print(hour());
-  printDigits(minute());
-  printDigits(second());
-  Serial.print(" ");
-  Serial.print(day());
-  Serial.print(" ");
-  Serial.print(month());
-  Serial.print(" ");
-  Serial.print(year()); 
-  Serial.println(); 
-}
-
-void printDigits(int digits){
-  // utility function for digital clock display: prints preceding colon and leading 0
-  Serial.print(":");
-  if(digits < 10)
-    Serial.print('0');
-  Serial.print(digits);
-}
-
-void processSyncMessage() {
-  // if time sync available from serial port, update time and return true
-  while(Serial.available() >=  TIME_MSG_LEN ){  // time message consists of header & 10 ASCII digits
-    char c = Serial.read() ; 
-    Serial.print(c);  
-    if( c == TIME_HEADER ) {       
-      time_t pctime = 0;
-      for(int i=0; i < TIME_MSG_LEN -1; i++){   
-        c = Serial.read();          
-        if( c >= '0' && c <= '9'){   
-          pctime = (10 * pctime) + (c - '0') ; // convert digits to a number    
-        }
-      }   
-      setTime(pctime);   // Sync Arduino clock to the time received on the serial port
-    }  
-  }
-}
-
-
 void loop()
 {
   
@@ -332,17 +190,13 @@ void loop()
   
   msgStr = (char *) realloc(msgStr, strlen(msgStr) + 1);
 
-  
   Serial.println(msgStr);
 
-  
   client = PubNub.publish(channel, msgStr);
   
   free(msgStr);
 
   client->stop();
-  
-  
   
   delay(1000);
 
